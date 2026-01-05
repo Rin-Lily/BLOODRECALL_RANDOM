@@ -64,16 +64,16 @@
       font-size: 1.1rem;
     }
 
-    /* ★ ここから4列固定レイアウトを追加 ★ */
     .result {
       display: grid;
-      grid-template-columns: repeat(4, 1fr); /* ← 常に4列固定 */
+      grid-template-columns: repeat(4, 1fr);
       gap: 10px;
       justify-items: center;
+      margin-bottom: 15px;
     }
 
     .result img {
-      width: 80px;   /* スマホでも4つ並ぶ最適サイズ */
+      width: 80px;
       height: auto;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
@@ -87,7 +87,7 @@
         font-size: 1rem;
       }
       .result img {
-        width: 70px; /* スマホ時は少し小さく */
+        width: 70px;
       }
     }
   </style>
@@ -105,7 +105,7 @@
 
     <div class="card">
       <div class="title">人器シャッフル</div>
-      <div id="result8" class="result"></div>
+      <div id="result8"></div>
     </div>
   </div>
 
@@ -174,12 +174,13 @@
       const picked4 = sortByOriginalOrder(items8, sampleWithoutReplacement(items8, 4));
       const remaining = items8.filter(x => !picked4.includes(x));
 
-      // プレイヤー1 と プレイヤー2 を4列グリッドで表示
+      // プレイヤーごとに別グリッドで表示
       document.getElementById("result8").innerHTML =
-        `<strong>プレイヤー1:</strong>` +
+        `<strong>プレイヤー1:</strong><div class="result">` +
         picked4.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("") +
-        `<strong>プレイヤー2:</strong>` +
-        remaining.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("");
+        `</div><strong>プレイヤー2:</strong><div class="result">` +
+        remaining.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("") +
+        `</div>`;
     }
   </script>
 </body>
