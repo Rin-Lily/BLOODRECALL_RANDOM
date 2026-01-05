@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blood_Recall抽選ツール(最期ノ詩環境)</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px 10px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: #fff;
+      padding: 20px 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 1.6rem;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 25px;
+    }
+
+    button:active {
+      background: #357ac9;
+      transform: scale(0.98);
+    }
+
+    .card {
+      background: #fafafa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border-left: 6px solid #4a90e2;
+    }
+
+    .title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+      font-size: 1.1rem;
+    }
+
+    .result img {
+      width: 120px;
+      max-width: 30vw;
+      margin: 5px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.4rem;
+      }
+      .title {
+        font-size: 1rem;
+      }
+      .result img {
+        width: 100px;
+        max-width: 40vw;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Blood_Recall抽選ツール(最期ノ詩環境)</h1>
+
+    <button onclick="runAll()">抽選する</button>
+
+    <div class="card">
+      <div class="title">欠損リコールカード</div>
+      <div id="result7" class="result"></div>
+    </div>
+
+    <div class="card">
+      <div class="title">人器シャッフル</div>
+      <div id="result8" class="result"></div>
+    </div>
+  </div>
+
+  <script>
+    const imageMap = {
+      "2": "2cost.png",
+      "3": "3cost.png",
+      "4": "4cost.png",
+      "5": "5cost.png",
+      "6": "6cost.png",
+      "7": "7cost.png",
+      "9": "9cost.png",
+      "ヒヒイロガネ": "ヒヒイロガネ.png",
+      "ウスガネヨロイ": "ウスガネヨロイ.png",
+      "トツカマチヂ": "トツカマヂチ.png",
+      "シラガネ": "シラガネ.png",
+      "ニライカナイ": "ニライカナイ.png",
+      "オボツカグラ": "オボツカグラ.png",
+      "クトネシリカ": "クトネシリカ.png",
+      "アポイタカラ": "アポイタカラ.png"
+    };
+
+    function sampleWithoutReplacement(array, n) {
+      const copied = [...array];
+      const result = [];
+      const max = Math.min(n, copied.length);
+      for (let i = 0; i < max; i++) {
+        const idx = Math.floor(Math.random() * copied.length);
+        result.push(copied[idx]);
+        copied.splice(idx, 1);
+      }
+      return result;
+    }
+
+    function sortByOriginalOrder(original, picked) {
+      return picked.sort((a, b) => original.indexOf(a) - original.indexOf(b));
+    }
+
+    function showImages(elementId, names) {
+      const area = document.getElementById(elementId);
+      area.innerHTML = "";
+      names.forEach(name => {
+        const img = document.createElement("img");
+        img.src = imageMap[name];
+        img.alt = name;
+        area.appendChild(img);
+      });
+    }
+
+    function runAll() {
+      const items7 = ["2", "3", "4", "5", "6", "7", "9"];
+      const items8 = [
+        "ヒヒイロガネ",
+        "ウスガネヨロイ",
+        "トツカマチヂ",
+        "シラガネ",
+        "ニライカナイ",
+        "オボツカグラ",
+        "クトネシリカ",
+        "アポイタカラ"
+      ];
+
+      const picked7 = sortByOriginalOrder(items7, sampleWithoutReplacement(items7, 2));
+      showImages("result7", picked7);
+
+      const picked4 = sortByOriginalOrder(items8, sampleWithoutReplacement(items8, 4));
+      const remaining = items8.filter(x => !picked4.includes(x));
+
+      // 改行して前半・後半を分けて表示
+      document.getElementById("result8").innerHTML =
+        `<strong>プレイヤー1:</strong><br>` +
+        picked4.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("") +
+        `<br><strong>プレイヤー2:</strong><br>` +
+        remaining.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("");
+    }
+  </script>
+</body>
+</html>
