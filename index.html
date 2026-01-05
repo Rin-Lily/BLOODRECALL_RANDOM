@@ -64,10 +64,17 @@
       font-size: 1.1rem;
     }
 
+    /* ★ ここから4列固定レイアウトを追加 ★ */
+    .result {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr); /* ← 常に4列固定 */
+      gap: 10px;
+      justify-items: center;
+    }
+
     .result img {
-      width: 120px;
-      max-width: 30vw;
-      margin: 5px;
+      width: 80px;   /* スマホでも4つ並ぶ最適サイズ */
+      height: auto;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
@@ -80,8 +87,7 @@
         font-size: 1rem;
       }
       .result img {
-        width: 100px;
-        max-width: 40vw;
+        width: 70px; /* スマホ時は少し小さく */
       }
     }
   </style>
@@ -168,13 +174,14 @@
       const picked4 = sortByOriginalOrder(items8, sampleWithoutReplacement(items8, 4));
       const remaining = items8.filter(x => !picked4.includes(x));
 
-      // 改行して前半・後半を分けて表示
+      // プレイヤー1 と プレイヤー2 を4列グリッドで表示
       document.getElementById("result8").innerHTML =
-        `<strong>プレイヤー1:</strong><br>` +
+        `<strong>プレイヤー1:</strong>` +
         picked4.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("") +
-        `<br><strong>プレイヤー2:</strong><br>` +
+        `<strong>プレイヤー2:</strong>` +
         remaining.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("");
     }
   </script>
 </body>
 </html>
+
