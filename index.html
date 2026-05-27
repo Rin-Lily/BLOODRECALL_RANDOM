@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blood_Recall抽選ツール(最期ノ詩環境)</title>
-  <link rel="apple-touch-icon" href="./アイコン画像.png">
+  <title>Blood_Recall抽選ツール</title>
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+
   <style>
     body {
       font-family: "Segoe UI", sans-serif;
@@ -20,7 +21,7 @@
       padding: 20px 25px;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      max-width: 600px;
+      max-width: 700px;
       width: 100%;
     }
 
@@ -78,24 +79,52 @@
       height: auto;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      cursor: pointer;
+      transition: 0.2s;
     }
 
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 1.4rem;
-      }
-      .title {
-        font-size: 1rem;
-      }
-      .result img {
-        width: 70px;
-      }
+    .selected {
+      border: 4px solid red;
+      box-sizing: border-box;
+    }
+
+    /* --- 対戦ポップアップ --- */
+    #battleModal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    #battleContent {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 90%;
+    }
+
+    #battleImages img {
+      width: 150px;
+      margin: 10px;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: 0.2s;
+    }
+
+    #battleImages img:hover {
+      transform: scale(1.05);
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h1>Blood_Recall抽選ツール(最期ノ詩環境)</h1>
+    <h1>Blood_Recall抽選ツール</h1>
 
     <button onclick="runAll()">抽選する</button>
 
@@ -106,7 +135,25 @@
 
     <div class="card">
       <div class="title">人器シャッフル</div>
-      <div id="result8"></div>
+
+      <strong>プレイヤー1:</strong>
+      <div id="p1area" class="result"></div>
+
+      <strong>プレイヤー2:</strong>
+      <div id="p2area" class="result"></div>
+    </div>
+
+    <button onclick="openBattle()">対戦を確定</button>
+
+    <button onclick="location.href='history.html'">記録を見る</button>
+  </div>
+
+  <!-- 対戦ポップアップ -->
+  <div id="battleModal">
+    <div id="battleContent">
+      <h2>勝者を選択</h2>
+      <div id="battleImages"></div>
+      <button onclick="confirmWinner()">勝者を確定</button>
     </div>
   </div>
 
@@ -129,11 +176,16 @@
       "アポイタカラ": "アポイタカラ.png"
     };
 
+    let selectedP1 = null;
+    let selectedP2 = null;
+    let winner = null;
+    let winnerCandidate = null;
+    let picked7_global = [];
+
     function sampleWithoutReplacement(array, n) {
       const copied = [...array];
       const result = [];
-      const max = Math.min(n, copied.length);
-      for (let i = 0; i < max; i++) {
+      for (let i = 0; i < n; i++) {
         const idx = Math.floor(Math.random() * copied.length);
         result.push(copied[idx]);
         copied.splice(idx, 1);
@@ -145,45 +197,108 @@
       return picked.sort((a, b) => original.indexOf(a) - original.indexOf(b));
     }
 
-    function showImages(elementId, names) {
-      const area = document.getElementById(elementId);
-      area.innerHTML = "";
-      names.forEach(name => {
-        const img = document.createElement("img");
-        img.src = imageMap[name];
-        img.alt = name;
-        area.appendChild(img);
+    function enableSelection() {
+      selectedP1 = null;
+      selectedP2 = null;
+      winner = null;
+
+      document.querySelectorAll("#p1area img").forEach(img => {
+        img.onclick = () => {
+          if (selectedP1) selectedP1.classList.remove("selected");
+          selectedP1 = img;
+          img.classList.add("selected");
+        };
+      });
+
+      document.querySelectorAll("#p2area img").forEach(img => {
+        img.onclick = () => {
+          if (selectedP2) selectedP2.classList.remove("selected");
+          selectedP2 = img;
+          img.classList.add("selected");
+        };
       });
     }
 
     function runAll() {
       const items7 = ["2", "3", "4", "5", "6", "7", "9"];
       const items8 = [
-        "ヒヒイロガネ",
-        "ウスガネヨロイ",
-        "トツカマチヂ",
-        "シラガネ",
-        "ニライカナイ",
-        "オボツカグラ",
-        "クトネシリカ",
-        "アポイタカラ"
+        "ヒヒイロガネ","ウスガネヨロイ","トツカマチヂ","シラガネ",
+        "ニライカナイ","オボツカグラ","クトネシリカ","アポイタカラ"
       ];
 
       const picked7 = sortByOriginalOrder(items7, sampleWithoutReplacement(items7, 2));
-      showImages("result7", picked7);
+      picked7_global = picked7;
+
+      document.getElementById("result7").innerHTML =
+        picked7.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("");
 
       const picked4 = sortByOriginalOrder(items8, sampleWithoutReplacement(items8, 4));
       const remaining = items8.filter(x => !picked4.includes(x));
 
-      // プレイヤーごとに別グリッドで表示
-      document.getElementById("result8").innerHTML =
-        `<strong>プレイヤー1:</strong><div class="result">` +
-        picked4.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("") +
-        `</div><strong>プレイヤー2:</strong><div class="result">` +
-        remaining.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("") +
-        `</div>`;
+      document.getElementById("p1area").innerHTML =
+        picked4.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("");
+
+      document.getElementById("p2area").innerHTML =
+        remaining.map(name => `<img src="${imageMap[name]}" alt="${name}">`).join("");
+
+      enableSelection();
+    }
+
+    function openBattle() {
+      if (!selectedP1 || !selectedP2) {
+        alert("両プレイヤーから1枚ずつ選んでください");
+        return;
+      }
+
+      const modal = document.getElementById("battleModal");
+      const area = document.getElementById("battleImages");
+
+      area.innerHTML = `
+        <img id="battle1" src="${selectedP1.src}" alt="${selectedP1.alt}" onclick="selectWinnerCandidate('battle1')">
+        <img id="battle2" src="${selectedP2.src}" alt="${selectedP2.alt}" onclick="selectWinnerCandidate('battle2')">
+      `;
+
+      winnerCandidate = null;
+      modal.style.display = "flex";
+    }
+
+    function selectWinnerCandidate(id) {
+      document.querySelectorAll("#battleImages img").forEach(img => {
+        img.classList.remove("selected");
+      });
+
+      const img = document.getElementById(id);
+      img.classList.add("selected");
+
+      winnerCandidate = img.alt;
+    }
+
+    function confirmWinner() {
+      if (!winnerCandidate) {
+        alert("勝者を選択してください");
+        return;
+      }
+
+      winner = { alt: winnerCandidate };
+      document.getElementById("battleModal").style.display = "none";
+
+      saveRecord();
+      alert("勝者: " + winnerCandidate + "（記録を保存しました）");
+    }
+
+    function saveRecord() {
+      const record = {
+        p1: selectedP1.alt,
+        p2: selectedP2.alt,
+        winner: winner.alt,
+        bonus: picked7_global,
+        time: new Date().toLocaleString()
+      };
+
+      const history = JSON.parse(localStorage.getItem("history") || "[]");
+      history.push(record);
+      localStorage.setItem("history", JSON.stringify(history));
     }
   </script>
 </body>
 </html>
-
