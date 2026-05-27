@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>記録一覧</title>
+
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px 10px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: #fff;
+      padding: 20px 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      max-width: 700px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 1.6rem;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 25px;
+    }
+
+    .record {
+      background: #fafafa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border-left: 6px solid #4a90e2;
+    }
+
+    /* 編集ポップアップ */
+    #editModal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    #editContent {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 90%;
+    }
+
+    select {
+      width: 90%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    .weapon-links a {
+      display: block;
+      padding: 10px;
+      background: #e9f1ff;
+      margin: 5px 0;
+      border-radius: 6px;
+      text-decoration: none;
+      color: #333;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>記録一覧</h1>
+
+    <button onclick="location.href='index.html'">抽選ページへ戻る</button>
+
+    <div id="history"></div>
+    <button id="loadMoreBtn" onclick="loadMore()">さらに表示</button>
+
+    <h2>武器別データ</h2>
+    <div class="weapon-links">
+      <a href="weapons/weapon_hihiirogane.html">ヒヒイロガネ</a>
+      <a href="weapons/weapon_usuganeyoroi.html">ウスガネヨロイ</a>
+      <a href="weapons/weapon_totsukamachiji.html">トツカマチヂ</a>
+      <a href="weapons/weapon_shiragane.html">シラガネ</a>
+      <a href="weapons/weapon_niraikanai.html">ニライカナイ</a>
+      <a href="weapons/weapon_obotsukagura.html">オボツカグラ</a>
+      <a href="weapons/weapon_kutoneshirika.html">クトネシリカ</a>
+      <a href="weapons/weapon_apoitakara.html">アポイタカラ</a>
+    </div>
+  </div>
+
+  <!-- 編集ポップアップ -->
+  <div id="editModal">
+    <div id="editContent">
+      <h2>記録を編集</h2>
+      <div id="editForm"></div>
+      <button onclick="saveEdit()">変更を保存</button>
+    </div>
+  </div>
+
+  <script>
+    const weaponList = [
+      "ヒヒイロガネ","ウスガネヨロイ","トツカマチヂ","シラガネ",
+      "ニライカナイ","オボツカグラ","クトネシリカ","アポイタカラ"
+    ];
+
+    const recallList = ["2","3","4","5","6","7","9"];
+
+    let editIndex = null;
+    let displayCount = 5;
+
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem("history") || "[]");
+      const area = document.getElementById("history");
+
+      const sliced = history.slice(-displayCount).reverse();
+
+      area.innerHTML = sliced.map((r, index) => `
+        <div class="record">
+          <strong>${r.time}</strong><br>
+          P1: ${r.p1}<br>
+          P2: ${r.p2}<br>
+          勝者: ${r.winner}<br>
+          欠損リコールカード: ${r.bonus.join(", ")}<br><br>
+
+          <button onclick="editRecord(${history.length - 1 - index})">編集</button>
+          <button onclick="deleteRecord(${history.length - 1 - index})">削除</button>
+        </div>
+      `).join("");
+    }
+
+    function loadMore() {
+      displayCount += 5;
+      loadHistory();
+    }
+
+    function editRecord(index) {
+      const history = JSON.parse(localStorage.getItem("history") || "[]");
+      const r = history[index];
+
+      editIndex = index;
+
+      document.getElementById("editForm").innerHTML = `
+        P1:<br>
+        <select id="editP1">
+          ${weaponList.map(c => `<option ${c===r.p1?"selected":""}>${c}</option>`).join("")}
+        </select><br>
+
+        P2:<br>
+        <select id="editP2">
+          ${weaponList.map(c => `<option ${c===r.p2?"selected":""}>${c}</option>`).join("")}
+        </select><br>
+
+        勝者:<br>
+        <select id="editWinner">
+          ${weaponList.map(c => `<option ${c===r.winner?"selected":""}>${c}</option>`).join("")}
+        </select><br>
+
+        欠損リコールカード1:<br>
+        <select id="editB1">
+          ${recallList.map(c => `<option ${c===r.bonus[0]?"selected":""}>${c}</option>`).join("")}
+        </select><br>
+
+        欠損リコールカード2:<br>
+        <select id="editB2">
+          ${recallList.map(c => `<option ${c===r.bonus[1]?"selected":""}>${c}</option>`).join("")}
+        </select><br>
+      `;
+
+      document.getElementById("editModal").style.display = "flex";
+    }
+
+    function saveEdit() {
+      const history = JSON.parse(localStorage.getItem("history") || "[]");
+
+      history[editIndex] = {
+        ...history[editIndex],
+        p1: document.getElementById("editP1").value,
+        p2: document.getElementById("editP2").value,
+        winner: document.getElementById("editWinner").value,
+        bonus: [
+          document.getElementById("editB1").value,
+          document.getElementById("editB2").value
+        ]
+      };
+
+      localStorage.setItem("history", JSON.stringify(history));
+      document.getElementById("editModal").style.display = "none";
+      loadHistory();
+    }
+
+    function deleteRecord(index) {
+      const history = JSON.parse(localStorage.getItem("history") || "[]");
+      history.splice(index, 1);
+      localStorage.setItem("history", JSON.stringify(history));
+      loadHistory();
+    }
+
+    loadHistory();
+  </script>
+</body>
+</html>
