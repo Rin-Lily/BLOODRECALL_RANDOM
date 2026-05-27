@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>トツカマチヂ 勝率分析</title>
+
+  <style>
+    body { font-family: "Segoe UI", sans-serif; background: #f5f7fa; margin: 0; padding: 20px 10px; display: flex; justify-content: center; }
+    .container { background: #fff; padding: 20px 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 700px; width: 100%; }
+    h1 { text-align: center; margin-bottom: 20px; color: #333; font-size: 1.6rem; }
+    img { display: block; margin: 0 auto 20px; max-width: 200px; border-radius: 10px; }
+    .section { margin-bottom: 25px; }
+    .section h2 { border-left: 6px solid #4a90e2; padding-left: 10px; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #e9f1ff; }
+    #totalWinrate { padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 25px; }
+    #totalRateNumber { font-size: 2.4rem; font-weight: bold; margin-bottom: 5px; }
+    #totalRateDetail { font-size: 1.2rem; color: #000; }
+    button { display: block; width: 100%; padding: 14px; font-size: 18px; background: #4a90e2; color: white; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; margin-top: 25px; }
+    button:active { background: #357ac9; transform: scale(0.98); }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>トツカマチヂ 勝率分析</h1>
+    <img src="../トツカマチヂ.png" alt="トツカマチヂ">
+
+    <div id="totalWinrate" class="section">
+      <div id="totalRateNumber"></div>
+      <div id="totalRateDetail"></div>
+    </div>
+
+    <div class="section">
+      <h2>欠損リコール組み合わせ別勝率</h2>
+      <table id="recallTable">
+        <tr><th>組み合わせ</th><th>勝率</th><th>勝敗</th></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>対武器勝率</h2>
+      <table id="weaponTable">
+        <tr><th>相手武器</th><th>勝率</th><th>勝敗</th></tr>
+      </table>
+    </div>
+
+    <button onclick="location.href='../history.html'">記録一覧へ戻る</button>
+  </div>
+
+  <script>
+    const weaponName = "トツカマチヂ";
+    const weaponList = ["ヒヒイロガネ","ウスガネヨロイ","トツカマチヂ","シラガネ","ニライカナイ","オボツカグラ","クトネシリカ","アポイタカラ"];
+    const recallList = ["2","3","4","5","6","7","9"];
+
+    function getColorByRate(rate) {
+      if (rate < 10) return "#ff0000";
+      if (rate < 20) return "#ff3300";
+      if (rate < 30) return "#ff6600";
+      if (rate < 40) return "#ff9900";
+      if (rate < 50) return "#ffcc00";
+      if (rate < 60) return "#cccc00";
+      if (rate < 70) return "#99cc00";
+      if (rate < 80) return "#66cc00";
+      if (rate < 90) return "#33cc33";
+      return "#00cc66";
+    }
+
+    function loadTotalWinrate(history) {
+      let play = 0, win = 0;
+      history.forEach(r => {
+        if (r.p1 === weaponName || r.p2 === weaponName) {
+          play++;
+          if (r.winner === weaponName) win++;
+        }
+      });
+      const rate = play ? Math.round((win / play) * 100) : 0;
+      document.getElementById("totalRateNumber").style.color = getColorByRate(rate);
+      document.getElementById("totalRateNumber").innerText = `${rate}%`;
+      document.getElementById("totalRateDetail").innerText = `(${win}勝 ${play - win}敗)`;
+    }
+
+    function loadData() {
+      const history = JSON.parse(localStorage.getItem("history") || "[]");
+      loadTotalWinrate(history);
+
+      const recallStats = {};
+      for (let i = 0; i < recallList.length; i++) {
+        for (let j = i + 1; j < recallList.length; j++) {
+          recallStats[`${recallList[i]}-${recallList[j]}`] = { play: 0, win: 0 };
+        }
+      }
+
+      history.forEach(r => {
+        const combo = [r.bonus[0], r.bonus[1]].sort().join("-");
+        if (recallStats[combo] && (r.p1 === weaponName || r.p2 === weaponName)) {
+          recallStats[combo].play++;
+          if (r.winner === weaponName) recallStats[combo].win++;
+        }
+      });
+
+      const recallTable = document.getElementById("recallTable");
+      Object.keys(recallStats).forEach(combo => {
+        const s = recallStats[combo];
+        const rate = s.play ? Math.round((s.win / s.play) * 100) : 0;
+        recallTable.innerHTML += `<tr><td>${combo}</td><td>${rate}%</td><td>${s.win}勝 / ${s.play - s.win}敗</td></tr>`;
+      });
+
+      const weaponStats = {};
+      weaponList.forEach(w => { if (w !== weaponName) weaponStats[w] = { play: 0, win: 0 }; });
+
+      history.forEach(r => {
+        if (r.p1 === weaponName && weaponStats[r.p2]) {
+          weaponStats[r.p2].play++;
+          if (r.winner === weaponName) weaponStats[r.p2].win++;
+        }
+        if (r.p2 === weaponName && weaponStats[r.p1]) {
+          weaponStats[r.p1].play++;
+          if (r.winner === weaponName) weaponStats[r.p1].win++;
+        }
+      });
+
+      const weaponTable = document.getElementById("weaponTable");
+      Object.keys(weaponStats).forEach(w => {
+        const s = weaponStats[w];
+        const rate = s.play ? Math.round((s.win / s.play) * 100) : 0;
+        weaponTable.innerHTML += `<tr><td>${w}</td><td>${rate}%</td><td>${s.win}勝 / ${s.play - s.win}敗</td></tr>`;
+      });
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
